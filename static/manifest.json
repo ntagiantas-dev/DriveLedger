@@ -1,0 +1,21 @@
+{
+  "name": "Does4U Daily Tracker",
+  "short_name": "Fleet Tracker",
+  "description": "Ημερήσιο tracker για οδηγούς Does4U",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12151b",
+  "theme_color": "#e8a33d",
+  "lang": "el",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/static/DriveLedger_does4u.jpg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

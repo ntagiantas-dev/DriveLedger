@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#e8a33d">
+<link rel="manifest" href="/manifest.json">
+<title>does4u — Ημερήσια Κίνηση</title>
+<link rel="icon" type="image/jpeg" href="/static/DriveLedger_does4u.jpg">
+<style>
+:root{--bg:#12151b;--panel:#1a1e27;--panel-2:#20242f;--line:#2a2f3c;--text:#edeef2;--muted:#8b93a3;--amber:#e8a33d;--danger:#d9685f;}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;padding:0 0 48px}
+.wrap{max-width:480px;margin:0 auto;padding:0 18px}
+.hero{padding:26px 18px 20px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.route-name{background:none;border:none;color:var(--amber);font-size:15px;font-weight:700;font-family:inherit;padding:0;margin-bottom:10px;border-bottom:1px dashed transparent;width:100%}
+.route-name:focus{outline:none;border-bottom-color:var(--line)}
+.hero-sub{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px;margin-top:4px}
+.hero-sub div{font-size:12.5px;color:var(--muted)}
+.hero-sub b{display:block;font-size:25px;color:var(--text);font-weight:700;margin-top:2px}
+.date-row{margin-top:18px;display:flex;align-items:center;gap:10px}
+.date-row input[type=date]{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;flex:1;min-width:0}
+.nav-btn{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:36px;height:36px;font-size:16px;font-family:inherit;cursor:pointer}
+.field-grid{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px 10px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}
+.field input{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:15px;font-family:inherit}
+section{margin-bottom:28px}
+h2{font-size:15px;font-weight:600;margin:0 0 12px}
+.hint{color:var(--muted);font-size:13px;margin:-6px 0 14px;line-height:1.45}
+.entry-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.entry-grid .field label{font-size:12px}
+.entry-grid input{font-size:19px;font-weight:700;text-align:center;padding:12px 8px}
+.totals-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.total-box{background:var(--panel-2);border-radius:8px;padding:10px 8px;text-align:center}
+.total-box span{display:block;color:var(--muted);font-size:11px}
+.total-box b{display:block;color:var(--amber);font-size:20px;margin-top:3px}
+.history{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.history-row{display:grid;grid-template-columns:.85fr .8fr .8fr .8fr;padding:10px 11px;border-bottom:1px solid var(--line);font-size:12px;gap:4px;cursor:pointer;align-items:center}
+.history-row:last-child{border-bottom:none}
+.history-row.head{background:var(--panel-2);color:var(--muted);font-size:10.5px;font-weight:600;cursor:default}
+.history-row .val{text-align:right;font-weight:700}
+.empty-note{color:var(--muted);font-size:13px;padding:14px 2px}
+.chart-wrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 12px 10px}
+.chart-wrap svg text{font-family:inherit}
+.backup-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.backup-btn{flex:1;min-width:120px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;cursor:pointer;text-align:center}
+.backup-btn.primary{background:var(--amber);color:#1a1206;font-weight:700;border:none}
+footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <input class="route-name" id="routeName" value="Ημερήσια κίνηση" aria-label="Όνομα διαδρομής">
+    <div class="hero-sub">
+      <div>Αναλήψεις<b id="heroPickup">0</b></div>
+      <div>Παραδόσεις<b id="heroDelivery">0</b></div>
+      <div>Σύνολο δεμάτων<b id="heroTotal">0</b></div>
+      <div>Ώρες βάρδιας<b id="heroHours">—</b></div>
+      <div>Χιλιόμετρα<b id="heroKm">—</b></div>
+    </div>
+    <div class="date-row">
+      <button class="nav-btn" onclick="shiftDate(-1)" aria-label="Προηγούμενη ημέρα">‹</button>
+      <input type="date" id="dateInput">
+      <button class="nav-btn" onclick="shiftDate(1)" aria-label="Επόμενη ημέρα">›</button>
+    </div>
+
+    <div class="field-grid" style="margin-top: 16px;">
+      <div class="field" style="grid-column: span 2;">
+        <label for="routeId" style="color: var(--amber); font-weight: bold;">Το Route ID σου (π.χ. 071)</label>
+        <input type="text" id="routeId" placeholder="Εισάγετε το ID σας" style="font-size: 18px; font-weight: bold; letter-spacing: 2px; text-align: center;" oninput="updateRouteId()">
+      </div>
+    </div>
+
+    <div class="field-grid">
+      <div class="field"><label for="shiftStart">Έναρξη βάρδιας</label><input type="time" id="shiftStart" oninput="updateShift()"></div>
+      <div class="field"><label for="shiftFinish">Λήξη βάρδιας</label><input type="time" id="shiftFinish" oninput="updateShift()"></div>
+      <div class="field"><label for="kmStart">Χλμ έναρξης</label><input type="number" id="kmStart" inputmode="decimal" min="0" step="0.1" placeholder="π.χ. 125430" oninput="updateKm()"></div>
+      <div class="field"><label for="kmFinish">Χλμ λήξης</label><input type="number" id="kmFinish" inputmode="decimal" min="0" step="0.1" placeholder="π.χ. 125565" oninput="updateKm()"></div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Ημερήσιες αναλήψεις / παραδόσεις</h2>
+    <p class="hint">Συμπλήρωσε μόνο τα συνολικά νούμερα της ημέρας. Δεν χρειάζεται καταχώρηση ανά locker.</p>
+    <div class="entry-card">
+      <div class="entry-grid">
+        <div class="field"><label for="pickupInput">Αναλήψεις ημέρας</label><input type="number" id="pickupInput" inputmode="numeric" min="0" step="1" placeholder="0" oninput="updateCounts()"></div>
+        <div class="field"><label for="deliveryInput">Παραδόσεις ημέρας</label><input type="number" id="deliveryInput" inputmode="numeric" min="0" step="1" placeholder="0" oninput="updateCounts()"></div>
+      </div>
+      <div class="totals-row">
+        <div class="total-box"><span>Αναλήψεις</span><b id="totalPickup">0</b></div>
+        <div class="total-box"><span>Παραδόσεις</span><b id="totalDelivery">0</b></div>
+        <div class="total-box"><span>Σύνολο</span><b id="totalParcels">0</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ιστορικό ημερών</h2>
+    <div class="history" id="historyTable"></div>
+  </section>
+
+  <section>
+    <h2>Ημερήσια απόδοση</h2>
+    <p class="hint">Κάθε σημείο αντιστοιχεί σε μία ημέρα. Χ = ώρες βάρδιας, Υ = συνολικά δέματα.</p>
+    <div class="chart-wrap"><div id="scatterHolder"></div></div>
+  </section>
+
+  <section>
+    <h2>Συγχρονισμός</h2>
+    <p class="hint">Στείλτε τα δεδομένα της ημέρας στον διαχειριστή.</p>
+    <button class="backup-btn primary" id="syncBtn" style="width: 100%; padding: 15px; font-size: 16px;" onclick="syncToServer()">📤 Αποστολή</button>
+    <p id="syncStatus" style="text-align: center; font-size: 13px; color: var(--muted); margin-top: 10px;"></p>
+  </section>
+
+  <section>
+    <h2>Αντίγραφο ασφαλείας</h2>
+    <p class="hint">Εξήγαγε τα δεδομένα τακτικά. Μπορείς να τα επαναφέρεις από το αρχείο JSON.</p>
+    <div class="backup-row">
+      <button class="backup-btn primary" onclick="exportData()">Εξαγωγή δεδομένων</button>
+      <button class="backup-btn" onclick="document.getElementById('importFile').click()">Εισαγωγή δεδομένων</button>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(event)">
+    </div>
+  </section>
+  <footer>does4u • Τα δεδομένα αποθηκεύονται στη συσκευή σου &amp; στον server</footer>
+</div>
+
+<script>
+let state = { routeLabel:"Ημερήσια κίνηση", routeId:"", daily:{} };
+const STORAGE_KEY = "does4u-daily-route-tracker-v1";
+
+// ============================================
+// API BASE URL
+// ============================================
+// Relative URL: δουλεύει αυτόματα σε localhost και production (Render κλπ).
+// Αν ο server είναι σε άλλο μηχάνημα (π.χ. κινητό → PC γραφείου),
+// άλλαξε το API_BASE σε "http://<IP-του-server>:8000" π.χ. "http://192.168.1.100:8000"
+const API_BASE = "";
+
+function pad(n){return String(n).padStart(2,"0")}
+function todayStr(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function fmtDate(iso){const [y,m,d]=iso.split("-");return `${parseInt(d)}/${parseInt(m)}/${y}`}
+function currentDate(){return document.getElementById("dateInput").value||todayStr()}
+function dayRecord(date){
+  if(!state.daily[date]) state.daily[date]={shift:{start:"",finish:""},km:{start:"",finish:""},pickup:"",delivery:""};
+  const r=state.daily[date];
+  if(!r.shift) r.shift={start:"",finish:""};
+  if(!r.km) r.km={start:"",finish:""};
+  if(r.pickup===undefined) r.pickup="";
+  if(r.delivery===undefined) r.delivery="";
+  return r;
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){const parsed=JSON.parse(raw);if(parsed&&parsed.daily&&typeof parsed.daily==="object"){state=parsed;if(!state.routeId)state.routeId="";return;}}
+  }catch(e){console.warn("Load failed",e)}
+  saveState();
+}
+function saveState(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+  catch(e){console.error("Αποτυχία αποθήκευσης",e);alert("Προσοχή: Δεν ήταν δυνατή η αποθήκευση.")}
+}
+function hoursBetween(start,finish){
+  if(!start||!finish)return null;
+  const [sh,sm]=start.split(":").map(Number),[fh,fm]=finish.split(":").map(Number);
+  let a=sh*60+sm,b=fh*60+fm;if(b<=a)b+=1440;return (b-a)/60;
+}
+function fmtHours(h){
+  if(h===null||h===undefined||isNaN(h))return "—";
+  const hh=Math.floor(h),mm=Math.round((h-hh)*60);
+  return `${hh}ω${mm>0?" "+pad(mm)+"'":""}`;
+}
+function numberOrNull(v){if(v===""||v===null||v===undefined)return null;const n=Number(v);return Number.isFinite(n)?n:null}
+function dayTotals(date){
+  const r=state.daily[date];if(!r)return {pickup:0,delivery:0,total:0,hours:null,km:null};
+  const pickup=Number(r.pickup)||0,delivery=Number(r.delivery)||0;
+  const a=numberOrNull(r.km?.start),b=numberOrNull(r.km?.finish);
+  const km=(a!==null&&b!==null&&b>=a)?b-a:null;
+  return {pickup,delivery,total:pickup+delivery,hours:hoursBetween(r.shift?.start,r.shift?.finish),km};
+}
+
+function updateRouteId() {
+  state.routeId = document.getElementById("routeId").value;
+  saveState();
+}
+
+async function syncToServer() {
+  if (!state.routeId) {
+    alert("⚠️ Παρακαλώ εισάγετε πρώτα το Route ID σας!");
+    return;
+  }
+
+  const date = currentDate();
+  const dr = dayRecord(date);
+  const t = dayTotals(date);
+
+  const payload = {
+    route_id: state.routeId.trim(),
+    date: date,
+    shift_start: dr.shift.start || null,
+    shift_finish: dr.shift.finish || null,
+    km_start: numberOrNull(dr.km.start),
+    km_finish: numberOrNull(dr.km.finish),
+    pickup_count: numberOrNull(dr.pickup),
+    delivery_count: numberOrNull(dr.delivery)
+  };
+
+  const btn = document.getElementById("syncBtn");
+  const statusEl = document.getElementById("syncStatus");
+  btn.disabled = true;
+  btn.textContent = "⏳ Αποστολή...";
+  statusEl.textContent = "";
+  statusEl.style.color = "var(--muted)";
+
+  try {
+    const res = await fetch(`${API_BASE}/api/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    let data = null;
+    try { data = await res.json(); } catch (_) { /* ignore */ }
+
+    if (res.ok) {
+      const action = data && data.action === "updated" ? "ενημερώθηκε" : "στάλθηκε";
+      statusEl.textContent = `✅ Επιτυχία — η αναφορά ${action}.`;
+      statusEl.style.color = "#5cb85c";
+      alert(`✅ Τα δεδομένα ${action} με επιτυχία!\n\nRoute ID: ${payload.route_id}\nΗμερομηνία: ${payload.date}\nΣύνολο δεμάτων: ${t.total}`);
+    } else {
+      const msg = (data && data.detail) || `HTTP ${res.status}`;
+      statusEl.textContent = `❌ Σφάλμα: ${msg}`;
+      statusEl.style.color = "var(--danger)";
+      alert(`❌ Σφάλμα αποστολής: ${msg}`);
+    }
+  } catch (err) {
+    statusEl.textContent = `❌ Αδυναμία σύνδεσης με τον server: ${err.message}`;
+    statusEl.style.color = "var(--danger)";
+    alert(`❌ Αδυναμία σύνδεσης με τον server.\n\n${err.message}\n\nΕλέγξτε αν τρέχει το backend.`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "📤 Αποστολή";
+  }
+}
+
+function shiftDate(delta){
+  const d=new Date(currentDate()+"T12:00:00");d.setDate(d.getDate()+delta);
+  document.getElementById("dateInput").value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  dayRecord(currentDate());saveState();renderAll();
+}
+function updateShift(){
+  const r=dayRecord(currentDate());r.shift.start=document.getElementById("shiftStart").value;r.shift.finish=document.getElementById("shiftFinish").value;
+  saveState();renderHero();renderHistory();renderScatter();
+}
+function updateKm(){
+  const r=dayRecord(currentDate());r.km.start=document.getElementById("kmStart").value;r.km.finish=document.getElementById("kmFinish").value;
+  saveState();renderHero();renderHistory();
+}
+function updateCounts(){
+  const r=dayRecord(currentDate());r.pickup=document.getElementById("pickupInput").value;r.delivery=document.getElementById("deliveryInput").value;
+  saveState();renderHero();renderTotals();renderHistory();renderScatter();
+}
+function renderHero(){
+  const date=currentDate(),r=dayRecord(date),t=dayTotals(date);
+  document.getElementById("routeId").value = state.routeId || "";
+  document.getElementById("heroPickup").textContent=t.pickup;
+  document.getElementById("heroDelivery").textContent=t.delivery;
+  document.getElementById("heroTotal").textContent=t.total;
+  document.getElementById("heroHours").textContent=fmtHours(t.hours);
+  document.getElementById("heroKm").textContent=t.km===null?"—":Number(t.km.toFixed(1)).toLocaleString("el-GR");
+  document.getElementById("shiftStart").value=r.shift.start||"";
+  document.getElementById("shiftFinish").value=r.shift.finish||"";
+  document.getElementById("kmStart").value=r.km.start??"";
+  document.getElementById("kmFinish").value=r.km.finish??"";
+  document.getElementById("pickupInput").value=r.pickup??"";
+  document.getElementById("deliveryInput").value=r.delivery??"";
+}
+function renderTotals(){
+  const t=dayTotals(currentDate());
+  document.getElementById("totalPickup").textContent=t.pickup;
+  document.getElementById("totalDelivery").textContent=t.delivery;
+  document.getElementById("totalParcels").textContent=t.total;
+}
+function renderHistory(){
+  const dates=Object.keys(state.daily).sort().reverse(),holder=document.getElementById("historyTable");
+  if(!dates.length){holder.innerHTML='<div class="empty-note">Καμία καταχώρηση ακόμα.</div>';return}
+  const rows=['<div class="history-row head"><div>Ημέρα</div><div class="val">Ώρες</div><div class="val">Χλμ</div><div class="val">Δέματα</div></div>'];
+  dates.forEach(date=>{
+    const t=dayTotals(date),km=t.km===null?"—":Number(t.km.toFixed(1)).toLocaleString("el-GR");
+    rows.push(`<div class="history-row" onclick="jumpToDate('${date}')"><div>${fmtDate(date)}</div><div class="val">${fmtHours(t.hours)}</div><div class="val">${km}</div><div class="val">${t.total}</div></div>`);
+  });
+  holder.innerHTML=rows.join("");
+}
+function jumpToDate(date){document.getElementById("dateInput").value=date;dayRecord(date);saveState();renderAll();window.scrollTo({top:0,behavior:"smooth"})}
+function renderScatter(){
+  const holder=document.getElementById("scatterHolder");
+  const points=Object.keys(state.daily).map(date=>{const t=dayTotals(date);return {date,hours:t.hours,total:t.total}}).filter(p=>p.hours!==null&&p.hours>0&&p.total>0);
+  if(!points.length){holder.innerHTML='<div class="empty-note">Συμπλήρωσε ώρες βάρδιας και αριθμό δεμάτων σε τουλάχιστον μία ημέρα για να εμφανιστεί το γράφημα.</div>';return}
+  const W=300,H=200,pL=36,pB=26,pT=14,pR=14,pW=W-pL-pR,pH=H-pT-pB;
+  const maxH=Math.max(...points.map(p=>p.hours),1),maxT=Math.max(...points.map(p=>p.total),1);
+  const xPos=h=>pL+(h/(maxH*1.1))*pW,yPos=v=>pT+pH-(v/(maxT*1.15))*pH;
+  let dots="";
+  points.forEach(p=>{const x=xPos(p.hours),y=yPos(p.total);dots+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="#e8a33d"/>`;dots+=`<text x="${x.toFixed(1)}" y="${(y-8).toFixed(1)}" font-size="8.5" fill="#8b93a3" text-anchor="middle">${fmtDate(p.date).slice(0,5)}</text>`});
+  let axes=`<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pT+pH}" stroke="#2a2f3c"/><line x1="${pL}" y1="${pT+pH}" x2="${pL+pW}" y2="${pT+pH}" stroke="#2a2f3c"/>`;
+  let ticks="";for(let i=0;i<=4;i++){const hv=maxH*1.1*i/4,x=xPos(hv);ticks+=`<line x1="${x}" y1="${pT+pH}" x2="${x}" y2="${pT+pH+4}" stroke="#2a2f3c"/><text x="${x}" y="${pT+pH+15}" font-size="8" fill="#8b93a3" text-anchor="middle">${hv.toFixed(0)}ω</text>`;const vv=maxT*1.15*i/4,y=yPos(vv);ticks+=`<line x1="${pL-4}" y1="${y}" x2="${pL}" y2="${y}" stroke="#2a2f3c"/><text x="${pL-7}" y="${y+3}" font-size="8" fill="#8b93a3" text-anchor="end">${vv.toFixed(0)}</text>`}
+  holder.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">${axes}${ticks}${dots}</svg>`;
+}
+function renderAll(){renderHero();renderTotals();renderHistory();renderScatter()}
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=`does4u-daily-backup-${todayStr()}.json`;a.click();URL.revokeObjectURL(url);
+}
+function importData(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{try{const imported=JSON.parse(e.target.result);if(!imported||!imported.daily||typeof imported.daily!=="object"){alert("Το αρχείο δεν φαίνεται να είναι έγκυρο backup της ημερήσιας καταγραφής.");return}
+    if(confirm("Θα αντικατασταθούν όλα τα τρέχοντα δεδομένα αυτής της εφαρμογής. Συνέχεια;")){state={routeLabel:imported.routeLabel||"Ημερήσια κίνηση",routeId:imported.routeId||"",daily:imported.daily};saveState();document.getElementById("routeName").value=state.routeLabel;renderAll();alert("Τα δεδομένα εισήχθησαν με επιτυχία!")}
+  }catch(err){alert("Σφάλμα κατά την ανάγνωση του αρχείου.")}};
+  reader.readAsText(file);event.target.value="";
+}
+function init(){
+  loadState();document.getElementById("dateInput").value=todayStr();
+  document.getElementById("routeName").value=state.routeLabel||"Ημερήσια κίνηση";
+  document.getElementById("routeName").addEventListener("input",e=>{state.routeLabel=e.target.value;saveState()});
+  document.getElementById("dateInput").addEventListener("change",()=>{dayRecord(currentDate());saveState();renderAll()});
+  window.addEventListener("beforeunload",saveState);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveState()});
+  renderAll();
+}
+init();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.error('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

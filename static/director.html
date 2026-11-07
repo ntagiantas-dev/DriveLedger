@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DriveLedger — Διευθυντικό Dashboard</title>
+<link rel="icon" type="image/jpeg" href="/static/DriveLedger_does4u.jpg">
+<style>
+:root{
+  --bg:#0e1117;
+  --panel:#1a1e27;
+  --panel-2:#232936;
+  --line:#2a3142;
+  --text:#edeef2;
+  --muted:#8b93a3;
+  --amber:#e8a33d;
+  --green:#5cb85c;
+  --red:#d9685f;
+  --blue:#5b9bd5;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+
+/* Header */
+.top-bar{
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+  padding:16px 32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+.top-bar h1{
+  margin:0;
+  font-size:20px;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.top-bar h1 img{
+  width:32px;
+  height:32px;
+  border-radius:6px;
+  object-fit:cover;
+}
+.top-bar .meta{
+  color:var(--muted);
+  font-size:13px;
+}
+
+/* Main container — desktop width */
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:28px 24px 60px;
+}
+
+/* Stats cards */
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+  margin-bottom:24px;
+}
+.stat-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:18px 20px;
+}
+.stat-card .label{
+  color:var(--muted);
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin-bottom:6px;
+}
+.stat-card .value{
+  color:var(--amber);
+  font-size:28px;
+  font-weight:700;
+}
+.stat-card .sub{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+
+/* Filter bar */
+.filter-bar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+}
+.filter-bar label{
+  color:var(--muted);
+  font-size:13px;
+}
+.filter-bar input[type=date],
+.filter-bar select{
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  color:var(--text);
+  border-radius:8px;
+  padding:9px 12px;
+  font-size:14px;
+  font-family:inherit;
+}
+.btn{
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  color:var(--text);
+  border-radius:8px;
+  padding:9px 16px;
+  font-size:14px;
+  font-family:inherit;
+  cursor:pointer;
+  transition:background 0.15s;
+}
+.btn:hover{background:#2e3648}
+.btn.primary{
+  background:var(--amber);
+  color:#1a1206;
+  font-weight:700;
+  border:none;
+}
+.btn.primary:hover{background:#f0b355}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.filter-bar .spacer{flex:1}
+.filter-bar .status{
+  color:var(--muted);
+  font-size:12px;
+}
+
+/* Table */
+.table-wrap{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+thead th{
+  background:var(--panel-2);
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  padding:14px 16px;
+  text-align:left;
+  border-bottom:1px solid var(--line);
+  white-space:nowrap;
+}
+thead th.num{text-align:right}
+tbody td{
+  padding:14px 16px;
+  border-bottom:1px solid var(--line);
+  vertical-align:middle;
+}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,0.02)}
+tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody td .route-id{
+  display:inline-block;
+  background:rgba(232,163,61,0.15);
+  color:var(--amber);
+  padding:3px 10px;
+  border-radius:6px;
+  font-weight:700;
+  font-size:13px;
+}
+tbody td .date-cell{color:var(--muted);font-size:13px}
+tbody td .highlight{font-weight:700;color:var(--text)}
+tbody td .muted{color:var(--muted);font-size:12px}
+
+/* Empty / Loading states */
+.state{
+  padding:60px 20px;
+  text-align:center;
+  color:var(--muted);
+  font-size:14px;
+}
+.state.error{color:var(--red)}
+
+/* Footer */
+.footer{
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  margin-top:32px;
+}
+
+/* Responsive tweak for tablets */
+@media (max-width:900px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .top-bar h1{font-size:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="top-bar">
+  <h1>
+    <img src="/static/DriveLedger_does4u.jpg" alt="logo">
+    DriveLedger — Διευθυντικό Dashboard
+  </h1>
+  <div class="meta" id="lastUpdated">—</div>
+</div>
+
+<div class="container">
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Διαδρομές</div>
+      <div class="value" id="statRoutes">—</div>
+      <div class="sub" id="statRoutesSub">μοναδικά Route IDs</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Αναφορές</div>
+      <div class="value" id="statReports">—</div>
+      <div class="sub">εγγραφές στη βάση</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Σύνολο Δεμάτων</div>
+      <div class="value" id="statParcels">—</div>
+      <div class="sub" id="statParcelsSub">αναλήψεις + παραδόσεις</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Σύνολο Χλμ</div>
+      <div class="value" id="statKm">—</div>
+      <div class="sub">από km_finish − km_start</div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <label for="dateFilter">Φίλτρο ημέρας:</label>
+    <input type="date" id="dateFilter">
+    <button class="btn" id="clearDateBtn">Καθαρισμός</button>
+    <select id="routeFilter">
+      <option value="">Όλες οι διαδρομές</option>
+    </select>
+    <div class="spacer"></div>
+    <span class="status" id="filterStatus"></span>
+    <button class="btn primary" id="refreshBtn">🔄 Refresh</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <div id="tableContainer">
+      <div class="state">Φόρτωση δεδομένων...</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    DriveLedger • does4u © 2026
+  </div>
+</div>
+
+<script>
+// ============================================
+// ΡΥΘΜΙΣΕΙΣ
+// ============================================
+// Relative URL — δουλεύει αυτόματα σε localhost και production.
+// Αν χρειάζεται explicit URL, βάλε π.χ. "http://192.168.1.100:8000".
+const API_BASE = "";
+
+let allReports = [];
+
+// ============================================
+// HELPERS
+// ============================================
+function fmtNumber(n, decimals) {
+  if (n === null || n === undefined || isNaN(n)) return "—";
+  return Number(n).toLocaleString("el-GR", {
+    minimumFractionDigits: decimals || 0,
+    maximumFractionDigits: decimals || 0
+  });
+}
+
+function hoursBetween(start, finish) {
+  if (!start || !finish) return null;
+  const [sh, sm] = start.split(":").map(Number);
+  const [fh, fm] = finish.split(":").map(Number);
+  let a = sh * 60 + sm;
+  let b = fh * 60 + fm;
+  if (b <= a) b += 1440;
+  return (b - a) / 60;
+}
+
+function fmtHours(h) {
+  if (h === null || h === undefined || isNaN(h)) return "—";
+  const hh = Math.floor(h);
+  const mm = Math.round((h - hh) * 60);
+  return `${hh}ω ${String(mm).padStart(2, "0")}′`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+// ============================================
+// DATA LOADING
+// ============================================
+async function loadReports() {
+  const refreshBtn = document.getElementById("refreshBtn");
+  refreshBtn.disabled = true;
+  refreshBtn.textContent = "⏳ Φόρτωση...";
+
+  try {
+    const res = await fetch(`${API_BASE}/api/reports`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    allReports = Array.isArray(data) ? data : [];
+    renderAll();
+  } catch (err) {
+    document.getElementById("tableContainer").innerHTML =
+      `<div class="state error">❌ Σφάλμα φόρτωσης: ${err.message}</div>`;
+    document.getElementById("filterStatus").textContent = "";
+  } finally {
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = "🔄 Refresh";
+  }
+}
+
+// ============================================
+// FILTERING
+// ============================================
+function getFilteredReports() {
+  const dateVal = document.getElementById("dateFilter").value;
+  const routeVal = document.getElementById("routeFilter").value;
+
+  let result = allReports;
+  if (dateVal) {
+    result = result.filter(r => r.date === dateVal);
+  }
+  if (routeVal) {
+    result = result.filter(r => r.route_id === routeVal);
+  }
+  return result;
+}
+
+// ============================================
+// RENDERING
+// ============================================
+function renderAll() {
+  renderStats();
+  renderRouteFilter();
+  renderTable();
+  renderLastUpdated();
+}
+
+function renderStats() {
+  const filtered = getFilteredReports();
+
+  // Unique routes
+  const routes = new Set(filtered.map(r => r.route_id).filter(Boolean));
+  document.getElementById("statRoutes").textContent = routes.size;
+
+  // Reports count
+  document.getElementById("statReports").textContent = filtered.length;
+
+  // Total parcels
+  let totalParcels = 0;
+  filtered.forEach(r => {
+    totalParcels += (Number(r.pickup_count) || 0) + (Number(r.delivery_count) || 0);
+  });
+  document.getElementById("statParcels").textContent = fmtNumber(totalParcels);
+
+  // Total km
+  let totalKm = 0;
+  filtered.forEach(r => {
+    const a = Number(r.km_start);
+    const b = Number(r.km_finish);
+    if (Number.isFinite(a) && Number.isFinite(b) && b >= a) {
+      totalKm += (b - a);
+    }
+  });
+  document.getElementById("statKm").textContent = fmtNumber(totalKm, 1);
+}
+
+function renderRouteFilter() {
+  const select = document.getElementById("routeFilter");
+  const currentVal = select.value;
+
+  const uniqueRoutes = [...new Set(allReports.map(r => r.route_id).filter(Boolean))]
+    .sort();
+
+  select.innerHTML = '<option value="">Όλες οι διαδρομές</option>';
+  uniqueRoutes.forEach(rid => {
+    const opt = document.createElement("option");
+    opt.value = rid;
+    opt.textContent = rid;
+    select.appendChild(opt);
+  });
+
+  if (currentVal && uniqueRoutes.includes(currentVal)) {
+    select.value = currentVal;
+  }
+}
+
+function renderTable() {
+  const filtered = getFilteredReports();
+  const container = document.getElementById("tableContainer");
+  const filterStatus = document.getElementById("filterStatus");
+
+  if (filtered.length === 0) {
+    filterStatus.textContent = "";
+    container.innerHTML = `
+      <div class="state">
+        📭 Δεν υπάρχουν δεδομένα${hasActiveFilters() ? " με αυτό το φίλτρο" : ""}.
+      </div>
+    `;
+    return;
+  }
+
+  filterStatus.textContent = `${filtered.length} εγγραφές`;
+  filterStatus.style.color = "var(--muted)";
+
+  const rows = filtered.map(r => {
+    const hours = hoursBetween(r.shift_start, r.shift_finish);
+    const kmA = Number(r.km_start);
+    const kmB = Number(r.km_finish);
+    const km = (Number.isFinite(kmA) && Number.isFinite(kmB) && kmB >= kmA)
+      ? kmB - kmA
+      : null;
+    const pickup = Number(r.pickup_count) || 0;
+    const delivery = Number(r.delivery_count) || 0;
+    const total = pickup + delivery;
+
+    return `
+      <tr>
+        <td><span class="route-id">${escapeHtml(r.route_id || "—")}</span></td>
+        <td class="date-cell">${fmtDate(r.date)}</td>
+        <td class="num">${fmtHours(hours)}</td>
+        <td class="num">${km === null ? "—" : fmtNumber(km, 1)}</td>
+        <td class="num">${fmtNumber(pickup)}</td>
+        <td class="num">${fmtNumber(delivery)}</td>
+        <td class="num"><span class="highlight">${fmtNumber(total)}</span></td>
+      </tr>
+    `;
+  }).join("");
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Route ID</th>
+          <th>Ημερομηνία</th>
+          <th class="num">Ώρες</th>
+          <th class="num">Χλμ</th>
+          <th class="num">Αναλήψεις</th>
+          <th class="num">Παραδόσεις</th>
+          <th class="num">Σύνολο</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function renderLastUpdated() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  document.getElementById("lastUpdated").textContent =
+    `Τελευταία ενημέρωση: ${hh}:${mm}`;
+}
+
+function hasActiveFilters() {
+  return !!(
+    document.getElementById("dateFilter").value ||
+    document.getElementById("routeFilter").value
+  );
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+// ============================================
+// EVENT LISTENERS
+// ============================================
+document.getElementById("refreshBtn").addEventListener("click", loadReports);
+document.getElementById("dateFilter").addEventListener("change", renderAll);
+document.getElementById("routeFilter").addEventListener("change", renderAll);
+document.getElementById("clearDateBtn").addEventListener("click", () => {
+  document.getElementById("dateFilter").value = "";
+  document.getElementById("routeFilter").value = "";
+  renderAll();
+});
+
+// Initial load
+loadReports();
+</script>
+</body>
+</html>
