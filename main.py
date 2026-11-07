@@ -1,5 +1,14 @@
 """
 does4u-fleet — FastAPI backend για το fleet tracker.
+
+Endpoints:
+    GET  /                → index.html (tracker οδηγού, PWA)
+    GET  /driver          → index.html (alias για clarity)
+    GET  /director        → static/director.html (dashboard διευθυντή)
+    GET  /manifest.json   → PWA manifest
+    GET  /sw.js           → Service Worker
+    POST /api/sync        → upsert αναφοράς οδηγού
+    GET  /api/reports     → λίστα αναφορών (για director)
 """
 import logging
 from typing import List, Optional
@@ -39,9 +48,6 @@ def on_startup() -> None:
     logger.info("Database initialized (fleet.db)")
 
 
-# ============================================
-# SCHEMAS
-# ============================================
 class DriverReportIn(BaseModel):
     route_id: str = Field(..., min_length=1, max_length=20)
     date: str = Field(..., description="YYYY-MM-DD")
@@ -67,23 +73,27 @@ class DriverReportOut(BaseModel):
     updated_at: Optional[str] = None
 
 
-# ============================================
-# STATIC FILES / PAGES
-# ============================================
 @app.get("/", include_in_schema=False)
 async def serve_index():
-    """Σερβίρει το HTML του οδηγού (tracker)."""
-    return FileResponse("static/does4u-daily-tracker.html")
+    """Tracker οδηγού (root, PWA)."""
+    return FileResponse("index.html")
+
+
+@app.get("/driver", include_in_schema=False)
+async def serve_driver_app():
+    """Tracker οδηγού — alias του /."""
+    return FileResponse("index.html")
 
 
 @app.get("/director", include_in_schema=False)
 async def serve_director():
-    """Σερβίρει το Dashboard του Διευθυντή (desktop)."""
+    """Dashboard διευθυντή (desktop)."""
     return FileResponse("static/director.html")
 
 
 @app.get("/manifest.json", include_in_schema=False)
 async def serve_manifest():
+    """PWA manifest."""
     return FileResponse(
         "static/manifest.json",
         media_type="application/manifest+json",
@@ -92,21 +102,19 @@ async def serve_manifest():
 
 @app.get("/sw.js", include_in_schema=False)
 async def serve_sw():
+    """Service Worker."""
     return FileResponse(
         "static/sw.js",
         media_type="application/javascript",
     )
 
 
-# ============================================
-# API ENDPOINTS
-# ============================================
 @app.post("/api/sync")
 async def sync_report(
     payload: DriverReportIn,
     db: Session = Depends(get_db),
 ):
-    """Upsert αναφοράς — αν υπάρχει (route_id, date) → update, αλλιώς insert."""
+    """Upsert αναφοράς — αν (route_id, date) υπάρχει → update, αλλιώς insert."""
     existing = (
         db.query(DriverReport)
         .filter(
@@ -157,7 +165,7 @@ async def sync_report(
 
 @app.get("/api/reports")
 async def list_reports(db: Session = Depends(get_db)):
-    """Επιστρέφει όλες τις αναφορές (για το director dashboard)."""
+    """Επιστρέφει όλες τις αναφορές (για director dashboard)."""
     rows = (
         db.query(DriverReport)
         .order_by(DriverReport.date.desc(), DriverReport.route_id.asc())
@@ -181,9 +189,6 @@ async def list_reports(db: Session = Depends(get_db)):
     return result
 
 
-# ============================================
-# STATIC ASSETS (πρέπει να είναι ΤΕΛΕΥΤΑΙΟ)
-# ============================================
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
