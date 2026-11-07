@@ -5,10 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#e8a33d">
-<link rel="manifest" href="/manifest.json">
 <title>does4u — Ημερήσια Κίνηση</title>
-<link rel="icon" type="image/jpeg" href="/static/DriveLedger_does4u.jpg">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231E3A5F'/><text y='70' x='50' text-anchor='middle' font-size='28' font-weight='bold' fill='%23FFD43B' font-family='Arial'>d4u</text></svg>">
 <style>
 :root{--bg:#12151b;--panel:#1a1e27;--panel-2:#20242f;--line:#2a2f3c;--text:#edeef2;--muted:#8b93a3;--amber:#e8a33d;--danger:#d9685f;}
 *{box-sizing:border-box}
@@ -69,6 +67,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
       <button class="nav-btn" onclick="shiftDate(1)" aria-label="Επόμενη ημέρα">›</button>
     </div>
 
+    <!-- ΝΕΟ ΠΕΔΙΟ ROUTE ID -->
     <div class="field-grid" style="margin-top: 16px;">
       <div class="field" style="grid-column: span 2;">
         <label for="routeId" style="color: var(--amber); font-weight: bold;">Το Route ID σου (π.χ. 071)</label>
@@ -111,11 +110,11 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
     <div class="chart-wrap"><div id="scatterHolder"></div></div>
   </section>
 
+  <!-- ΝΕΟ ΚΟΥΜΠΙ ΑΠΟΣΤΟΛΗΣ -->
   <section>
     <h2>Συγχρονισμός</h2>
     <p class="hint">Στείλτε τα δεδομένα της ημέρας στον διαχειριστή.</p>
-    <button class="backup-btn primary" id="syncBtn" style="width: 100%; padding: 15px; font-size: 16px;" onclick="syncToServer()">📤 Αποστολή</button>
-    <p id="syncStatus" style="text-align: center; font-size: 13px; color: var(--muted); margin-top: 10px;"></p>
+    <button class="backup-btn primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="syncToServer()">📤 Αποστολή</button>
   </section>
 
   <section>
@@ -127,20 +126,12 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
       <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(event)">
     </div>
   </section>
-  <footer>does4u • Τα δεδομένα αποθηκεύονται στη συσκευή σου &amp; στον server</footer>
+  <footer>does4u • Τα δεδομένα αποθηκεύονται μόνο στη συσκευή σου</footer>
 </div>
 
 <script>
 let state = { routeLabel:"Ημερήσια κίνηση", routeId:"", daily:{} };
 const STORAGE_KEY = "does4u-daily-route-tracker-v1";
-
-// ============================================
-// API BASE URL
-// ============================================
-// Relative URL: δουλεύει αυτόματα σε localhost και production (Render κλπ).
-// Αν ο server είναι σε άλλο μηχάνημα (π.χ. κινητό → PC γραφείου),
-// άλλαξε το API_BASE σε "http://<IP-του-server>:8000" π.χ. "http://192.168.1.100:8000"
-const API_BASE = "";
 
 function pad(n){return String(n).padStart(2,"0")}
 function todayStr(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
@@ -195,57 +186,33 @@ async function syncToServer() {
     alert("⚠️ Παρακαλώ εισάγετε πρώτα το Route ID σας!");
     return;
   }
-
   const date = currentDate();
-  const dr = dayRecord(date);
   const t = dayTotals(date);
-
+  
   const payload = {
-    route_id: state.routeId.trim(),
+    route_id: state.routeId,
     date: date,
-    shift_start: dr.shift.start || null,
-    shift_finish: dr.shift.finish || null,
-    km_start: numberOrNull(dr.km.start),
-    km_finish: numberOrNull(dr.km.finish),
-    pickup_count: numberOrNull(dr.pickup),
-    delivery_count: numberOrNull(dr.delivery)
+    shift: dayRecord(date).shift,
+    km: dayRecord(date).km,
+    pickup: t.pickup,
+    delivery: t.delivery,
+    total: t.total
   };
 
-  const btn = document.getElementById("syncBtn");
-  const statusEl = document.getElementById("syncStatus");
-  btn.disabled = true;
-  btn.textContent = "⏳ Αποστολή...";
-  statusEl.textContent = "";
-  statusEl.style.color = "var(--muted)";
-
+  // Σύνδεση με το Render API
   try {
-    const res = await fetch(`${API_BASE}/api/sync`, {
+    const res = await fetch("https://driveledger-hnts.onrender.com/api/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-
-    let data = null;
-    try { data = await res.json(); } catch (_) { /* ignore */ }
-
     if (res.ok) {
-      const action = data && data.action === "updated" ? "ενημερώθηκε" : "στάλθηκε";
-      statusEl.textContent = `✅ Επιτυχία — η αναφορά ${action}.`;
-      statusEl.style.color = "#5cb85c";
-      alert(`✅ Τα δεδομένα ${action} με επιτυχία!\n\nRoute ID: ${payload.route_id}\nΗμερομηνία: ${payload.date}\nΣύνολο δεμάτων: ${t.total}`);
+      alert("✅ Τα δεδομένα στάλθηκαν με επιτυχία!");
     } else {
-      const msg = (data && data.detail) || `HTTP ${res.status}`;
-      statusEl.textContent = `❌ Σφάλμα: ${msg}`;
-      statusEl.style.color = "var(--danger)";
-      alert(`❌ Σφάλμα αποστολής: ${msg}`);
+      alert("❌ Σφάλμα κατά την αποστολή. Ελέγξτε τα δεδομένα.");
     }
   } catch (err) {
-    statusEl.textContent = `❌ Αδυναμία σύνδεσης με τον server: ${err.message}`;
-    statusEl.style.color = "var(--danger)";
-    alert(`❌ Αδυναμία σύνδεσης με τον server.\n\n${err.message}\n\nΕλέγξτε αν τρέχει το backend.`);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "📤 Αποστολή";
+    alert("❌ Αδυναμία σύνδεσης με τον server. Ελέγξτε το internet.");
   }
 }
 
@@ -334,14 +301,6 @@ function init(){
   renderAll();
 }
 init();
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.error('SW registration failed:', err));
-  });
-}
 </script>
 </body>
 </html>
