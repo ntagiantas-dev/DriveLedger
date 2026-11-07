@@ -48,9 +48,23 @@ h2{font-size:15px;font-weight:600;margin:0 0 12px}
 .backup-btn{flex:1;min-width:120px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;cursor:pointer;text-align:center}
 .backup-btn.primary{background:var(--amber);color:#1a1206;font-weight:700;border:none}
 footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
+
+/* Loading Spinner CSS */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 </style>
 </head>
 <body>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(18, 21, 27, 0.95); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; color: var(--amber); font-family: inherit;">
+  <h1 style="font-size: 32px; margin-bottom: 20px; letter-spacing: 2px;">DriveLedger</h1>
+  <div style="border: 4px solid var(--line); border-top: 4px solid var(--amber); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+  <p style="margin-top: 20px; color: var(--muted); font-size: 14px;">Αποστολή δεδομένων...</p>
+</div>
+
 <div class="wrap">
   <div class="hero">
     <input class="route-name" id="routeName" value="Ημερήσια κίνηση" aria-label="Όνομα διαδρομής">
@@ -110,7 +124,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
     <div class="chart-wrap"><div id="scatterHolder"></div></div>
   </section>
 
-  <!-- ΝΕΟ ΚΟΥΜΠΙ ΑΠΟΣΤΟΛΗΣ -->
+  <!-- ΚΟΥΜΠΙ ΑΠΟΣΤΟΛΗΣ -->
   <section>
     <h2>Συγχρονισμός</h2>
     <p class="hint">Στείλτε τα δεδομένα της ημέρας στον διαχειριστή.</p>
@@ -199,6 +213,10 @@ async function syncToServer() {
     total: t.total
   };
 
+  // 1. Εμφάνιση του Loading Overlay
+  const loader = document.getElementById("loadingOverlay");
+  if (loader) loader.style.display = "flex";
+
   // Σύνδεση με το Render API
   try {
     const res = await fetch("https://driveledger-hnts.onrender.com/api/sync", {
@@ -206,12 +224,18 @@ async function syncToServer() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
+    
+    // 2. Απόκρυψη του Loading Overlay
+    if (loader) loader.style.display = "none";
+
     if (res.ok) {
       alert("✅ Τα δεδομένα στάλθηκαν με επιτυχία!");
     } else {
       alert("❌ Σφάλμα κατά την αποστολή. Ελέγξτε τα δεδομένα.");
     }
   } catch (err) {
+    // 3. Απόκρυψη του Loading Overlay και σε περίπτωση σφάλματος
+    if (loader) loader.style.display = "none";
     alert("❌ Αδυναμία σύνδεσης με τον server. Ελέγξτε το internet.");
   }
 }
